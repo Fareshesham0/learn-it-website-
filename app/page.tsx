@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { ArrowRight, BookOpen, Compass, Cpu, Lightbulb, Play, Wrench } from "lucide-react";
-import { EmptyState, FeatureCard, ProgressBar, SectionHeader, StatusBadge } from "@/components/site-ui";
+import { ContinueLearningSection } from "@/components/continue-learning-section";
+import { FeatureCard, SectionHeader } from "@/components/site-ui";
 
 const actions = [
   { icon: BookOpen, title: "Learn Something", description: "Build useful computer skills, one idea at a time.", href: "/learn", tone: "mint" as const },
@@ -43,13 +44,7 @@ export default function HomePage() {
 
       <section className="content-section page-width">
         <SectionHeader eyebrow="Pick up where you left off" title="Continue Learning" action={{ label: "Browse lessons", href: "/learn" }} />
-        <div className="learning-progress-card">
-          <EmptyState icon={BookOpen} title="Your learning journey starts here" description="Progress shown here is an example for the design preview." />
-          <div className="mock-progress">
-            <StatusBadge tone="success">Level 1</StatusBadge>
-            <ProgressBar value={120} max={300} label="Level progress" />
-          </div>
-        </div>
+        <ContinueLearningSection />
       </section>
 
       <section className="content-section page-width">

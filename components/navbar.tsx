@@ -2,6 +2,7 @@ import Link from "next/link";
 import { Search, UserRound } from "lucide-react";
 import { IconButton } from "@/components/site-ui";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
+import { ThemeToggle } from "@/components/theme-toggle";
 
 const links = [
   ["Learn", "/learn"],
@@ -52,6 +53,7 @@ export async function Navbar() {
         <div className="nav-actions">
           <IconButton icon={Search} label="Search help topics" href="/fix" />
           <IconButton icon={UserRound} label={accountLabel ? "Profile" : "Sign in"} href={accountHref} className="profile-button" />
+          <ThemeToggle />
           <details className="mobile-menu">
             <summary aria-label="Open navigation menu"><span /><span /></summary>
             <nav aria-label="Mobile navigation">

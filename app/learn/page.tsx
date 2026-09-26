@@ -6,7 +6,7 @@ import { CategoryCard, PageHeader } from "@/components/site-ui";
 export const metadata: Metadata = { title: "Learn" };
 
 const categories = [
-  { icon: Keyboard, title: "Computer Basics", description: "The building blocks of computers and how they work.", tone: "mint" as const },
+  { icon: Keyboard, title: "Computer Basics", description: "The building blocks of computers and how they work.", tone: "mint" as const, href: "/learn/computer-basics" },
   { icon: Cpu, title: "Hardware", description: "Meet the components that make a computer tick.", tone: "blue" as const },
   { icon: HardDrive, title: "Using a Computer", description: "Everyday skills for getting things done.", tone: "peach" as const },
   { icon: Globe2, title: "Internet & Networking", description: "Understand websites, Wi-Fi, and connections.", tone: "lemon" as const },
