@@ -1,27 +1,59 @@
 import type { Metadata } from "next";
-import { Bookmark, ChartNoAxesColumnIncreasing, Medal, Sparkles } from "lucide-react";
-import { CategoryCard, PageIntro, ProgressBar, SectionHeader } from "@/components/site-ui";
+import { redirect } from "next/navigation";
+import { ProfileForm } from "@/components/profile-form";
+import { PageHeader, StatusBadge, Button } from "@/components/site-ui";
+import { signOutAction } from "@/app/actions/auth";
+import { createSupabaseServerClient } from "@/lib/supabase/server";
 
 export const metadata: Metadata = { title: "Profile" };
+export const dynamic = "force-dynamic";
 
-export default function ProfilePage() {
+export default async function ProfilePage() {
+  let supabase;
+  try {
+    supabase = await createSupabaseServerClient();
+  } catch {
+    return (
+      <div className="page-main page-width">
+        <PageHeader eyebrow="Profile" title="Connect your account" description="Add your Supabase project URL and public anon key to .env.local to enable account access." />
+        <p className="inline-note">Copy .env.example to .env.local, add your project values, then restart the development server.</p>
+      </div>
+    );
+  }
+
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) redirect("/login");
+
+  const { data: profile, error: profileError } = await supabase
+    .from("profiles")
+    .select("user_id, display_name, learning_mode, created_at")
+    .eq("user_id", user.id)
+    .maybeSingle();
+
   return (
     <div className="page-main page-width">
-      <PageIntro eyebrow="Profile" title="Your learning space" description="A home for your progress, milestones, and saved guides. Profile features are planned for a future phase." />
-      <div className="profile-stats">
-        <div className="stat-card"><span>Level</span><strong>—</strong><p>Coming in a future phase</p></div>
-        <div className="stat-card"><span>XP</span><strong>—</strong><p>Coming in a future phase</p></div>
-        <div className="stat-card"><span>Badges</span><strong>—</strong><p>Coming in a future phase</p></div>
+      <div className="profile-heading-row">
+        <PageHeader eyebrow="Profile" title="Your account" description="Your account details and learning preferences." />
+        <form action={signOutAction}><Button variant="secondary" type="submit">Sign out</Button></form>
       </div>
-      <section className="profile-section">
-        <SectionHeader eyebrow="Your journey" title="Learning Progress" />
-        <div className="placeholder-panel"><span className="icon-tile mint"><ChartNoAxesColumnIncreasing size={23} aria-hidden="true" /></span><div><strong>Your progress will show up here</strong><p>Lessons completed and milestones will be collected here later.</p><ProgressBar value={0} max={300} label="Learning progress" showValue={false} /></div></div>
+      <section className="account-card" aria-labelledby="account-details-heading">
+        <div className="account-card-heading">
+          <div><p className="eyebrow">Account details</p><h2 id="account-details-heading">Your Learn It profile</h2></div>
+          {user.email_confirmed_at && <StatusBadge tone="success">Email verified</StatusBadge>}
+        </div>
+        <dl className="account-email">
+          <div><dt>Email address</dt><dd>{user.email}</dd></div>
+        </dl>
+        {profile ? (
+          <ProfileForm displayName={profile.display_name ?? ""} learningMode={profile.learning_mode} />
+        ) : (
+          <p className="auth-message auth-message-error" role="alert">
+            {profileError
+              ? "The profile table is not available yet. Apply the SQL migration in supabase/migrations to enable profile details."
+              : "Your profile record is not ready yet. Contact support if this continues."}
+          </p>
+        )}
       </section>
-      <section className="profile-section">
-        <SectionHeader eyebrow="Keep close" title="Saved Guides" />
-        <CategoryCard icon={Bookmark} title="Your saved guides" description="Guides you save will be easy to find here." tone="blue" status="Coming later" />
-      </section>
-      <span className="sr-only"><Medal aria-hidden="true" /><Sparkles aria-hidden="true" /></span>
     </div>
   );
 }
