@@ -3,6 +3,31 @@ export type LearningMode = "Explorer" | "Learner" | "Technical";
 export type Database = {
   public: {
     Tables: {
+      badges: {
+        Row: {
+          id: string;
+          slug: string;
+          title: string;
+          description: string;
+          icon: string | null;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          slug: string;
+          title: string;
+          description: string;
+          icon?: string | null;
+          created_at?: string;
+        };
+        Update: {
+          slug?: string;
+          title?: string;
+          description?: string;
+          icon?: string | null;
+        };
+        Relationships: [];
+      };
       learning_paths: {
         Row: {
           id: string;
@@ -95,6 +120,22 @@ export type Database = {
           estimated_minutes?: number | null;
           sort_order?: number;
           is_published?: boolean;
+        };
+        Relationships: [];
+      };
+      user_badges: {
+        Row: {
+          user_id: string;
+          badge_id: string;
+          awarded_at: string;
+        };
+        Insert: {
+          user_id: string;
+          badge_id: string;
+          awarded_at?: string;
+        };
+        Update: {
+          awarded_at?: string;
         };
         Relationships: [];
       };

@@ -72,6 +72,11 @@ export function LessonProgressControls({
           {completeState.xpMessages.map((message) => <p key={message}>{message}</p>)}
         </div>
       )}
+      {completeState?.status === "success" && completeState.badgeMessages && completeState.badgeMessages.length > 0 && (
+        <div className="lesson-badge-feedback" role="status" aria-label="Badge unlocked">
+          {completeState.badgeMessages.map((message) => <p key={message}>{message}</p>)}
+        </div>
+      )}
       {continueHref && (
         <Link className="button-primary lesson-continue-next" href={continueHref}>
           Continue to next lesson <ArrowRight size={16} aria-hidden="true" />

@@ -5,6 +5,7 @@ import { EmptyState, PageHeader, ProgressBar, SectionHeader, StatusBadge, Button
 import { signOutAction } from "@/app/actions/auth";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { getLearningProgressOverview } from "@/lib/learning-progress";
+import { getAuthenticatedUserBadges, type AwardedBadge } from "@/lib/badges";
 import { getAuthenticatedUserRecentXpEvents, getAuthenticatedUserXpSummary, type RecentXpEvent } from "@/lib/xp";
 import Link from "next/link";
 
@@ -36,14 +37,17 @@ export default async function ProfilePage() {
   let learningOverview = null;
   let xpSummary = null;
   let recentXpEvents: RecentXpEvent[] = [];
+  let awardedBadges: AwardedBadge[] = [];
   try {
     learningOverview = await getLearningProgressOverview(supabase, user.id);
     xpSummary = await getAuthenticatedUserXpSummary(supabase);
     recentXpEvents = await getAuthenticatedUserRecentXpEvents(supabase);
+    awardedBadges = await getAuthenticatedUserBadges(supabase);
   } catch {
     learningOverview = null;
     xpSummary = null;
     recentXpEvents = [];
+    awardedBadges = [];
   }
 
   return (
@@ -134,6 +138,27 @@ export default async function ProfilePage() {
           </>
         ) : (
           <p className="auth-message auth-message-error" role="alert">Learning progress could not be loaded right now.</p>
+        )}
+      </section>
+      <section className="profile-section profile-badges-section">
+        <SectionHeader eyebrow="Badges" title="Achievements" />
+        {awardedBadges.length > 0 ? (
+          <div className="badge-grid">
+            {awardedBadges.map((badge) => (
+              <article className="badge-card" key={badge.id}>
+                <span className="badge-icon" aria-hidden="true">{badge.icon ?? badge.title.slice(0, 1)}</span>
+                <div>
+                  <h3>{badge.title}</h3>
+                  <p>{badge.description}</p>
+                  <time dateTime={badge.awardedAt}>Awarded {new Intl.DateTimeFormat("en", { month: "short", day: "numeric", year: "numeric" }).format(new Date(badge.awardedAt))}</time>
+                </div>
+              </article>
+            ))}
+          </div>
+        ) : (
+          <div className="profile-learning-empty">
+            <EmptyState title="No badges yet" description="Complete lessons and milestones to unlock badges here." />
+          </div>
         )}
       </section>
       <section className="profile-section profile-xp-activity">

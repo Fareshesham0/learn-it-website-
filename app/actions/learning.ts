@@ -2,6 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
+import { getAuthenticatedUserBadges, getAuthenticatedUserBadgeSlugs } from "@/lib/badges";
 
 type ProgressStatus = "in_progress" | "completed";
 type ProgressActionState = {
@@ -10,6 +11,7 @@ type ProgressActionState = {
   continueHref?: string;
   pathComplete?: boolean;
   xpMessages?: string[];
+  badgeMessages?: string[];
 } | null;
 
 function getSlug(formData: FormData, field: string) {
@@ -80,6 +82,15 @@ async function saveLessonProgress(formData: FormData, status: ProgressStatus): P
       return { status: "success", message: "This lesson is already complete." };
     }
 
+    let badgeSlugsBeforeCompletion = new Set<string>();
+    if (status === "completed" && existing?.status !== "completed") {
+      try {
+        badgeSlugsBeforeCompletion = await getAuthenticatedUserBadgeSlugs(supabase);
+      } catch {
+        badgeSlugsBeforeCompletion = new Set<string>();
+      }
+    }
+
     const now = new Date().toISOString();
     const { error: saveError } = await supabase
       .from("user_lesson_progress")
@@ -97,6 +108,7 @@ async function saveLessonProgress(formData: FormData, status: ProgressStatus): P
 
     revalidatePath(`/learn/${pathSlug}`);
     revalidatePath(`/learn/${pathSlug}/${lessonSlug}`);
+    revalidatePath("/profile");
     revalidatePath("/");
 
     if (status === "completed") {
@@ -110,6 +122,7 @@ async function saveLessonProgress(formData: FormData, status: ProgressStatus): P
         .limit(1)
         .maybeSingle();
       const xpMessages: string[] = [];
+      const badgeMessages: string[] = [];
 
       if (existing?.status !== "completed") {
         const lessonEventKey = lesson.slug.startsWith("final-mission-")
@@ -128,6 +141,17 @@ async function saveLessonProgress(formData: FormData, status: ProgressStatus): P
         xpEvents?.forEach((event) => {
           xpMessages.push(getXpMessage(event.event_type, event.xp_amount));
         });
+
+        try {
+          const badgesAfterCompletion = await getAuthenticatedUserBadges(supabase);
+          badgesAfterCompletion.forEach((badge) => {
+            if (!badgeSlugsBeforeCompletion.has(badge.slug)) {
+              badgeMessages.push(`Badge unlocked: ${badge.title}`);
+            }
+          });
+        } catch {
+          badgeMessages.length = 0;
+        }
       }
 
       return {
@@ -136,6 +160,7 @@ async function saveLessonProgress(formData: FormData, status: ProgressStatus): P
         continueHref: nextLessonError || !nextLesson ? undefined : `/learn/${pathSlug}/${nextLesson.slug}`,
         pathComplete: !nextLessonError && !nextLesson,
         xpMessages,
+        badgeMessages,
       };
     }
 
