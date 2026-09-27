@@ -101,7 +101,13 @@ export default async function LessonPage({ params }: PageProps) {
       )}
 
       {supportsContent && (
-        <LessonProgressControls pathSlug={path.slug} lessonSlug={lesson.slug} status={progressStatus} authenticated={Boolean(user)} />
+        <LessonProgressControls
+          pathSlug={path.slug}
+          lessonSlug={lesson.slug}
+          status={progressStatus}
+          authenticated={Boolean(user)}
+          nextLessonHref={nextLesson ? `/learn/${path.slug}/${nextLesson.slug}` : undefined}
+        />
       )}
 
       <nav className="lesson-navigation" aria-label="Lesson navigation">

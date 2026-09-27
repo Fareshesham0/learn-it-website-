@@ -3,6 +3,7 @@ import { ArrowRight, BookOpen } from "lucide-react";
 import { EmptyState } from "@/components/site-ui";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { getLearningProgressOverview } from "@/lib/learning-progress";
+import { getAuthenticatedUserXpSummary } from "@/lib/xp";
 
 export async function ContinueLearningSection() {
   let supabase;
@@ -23,8 +24,10 @@ export async function ContinueLearningSection() {
   }
 
   let overview;
+  let xpSummary = null;
   try {
     overview = await getLearningProgressOverview(supabase, user.id);
+    xpSummary = await getAuthenticatedUserXpSummary(supabase);
   } catch {
     return <ProgressEmptyState />;
   }
@@ -54,6 +57,12 @@ export async function ContinueLearningSection() {
           <span>{recommendation.path.completedLessons} of {recommendation.path.totalLessons} lessons completed</span>
           <strong>{recommendation.path.completionPercent}% complete</strong>
         </div>
+        {xpSummary && (
+          <div className="continue-xp-indicator">
+            <span>Level {xpSummary.currentLevel}</span>
+            <strong>{xpSummary.totalXp} XP</strong>
+          </div>
+        )}
         <div className="path-progress-track" role="progressbar" aria-label={`${recommendation.pathTitle} completion`} aria-valuemin={0} aria-valuemax={100} aria-valuenow={recommendation.path.completionPercent}>
           <span style={{ width: `${recommendation.path.completionPercent}%` }} />
         </div>

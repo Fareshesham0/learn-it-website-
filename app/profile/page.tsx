@@ -5,6 +5,7 @@ import { EmptyState, PageHeader, ProgressBar, SectionHeader, StatusBadge, Button
 import { signOutAction } from "@/app/actions/auth";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { getLearningProgressOverview } from "@/lib/learning-progress";
+import { getAuthenticatedUserRecentXpEvents, getAuthenticatedUserXpSummary, type RecentXpEvent } from "@/lib/xp";
 import Link from "next/link";
 
 export const metadata: Metadata = { title: "Profile" };
@@ -33,10 +34,16 @@ export default async function ProfilePage() {
     .maybeSingle();
 
   let learningOverview = null;
+  let xpSummary = null;
+  let recentXpEvents: RecentXpEvent[] = [];
   try {
     learningOverview = await getLearningProgressOverview(supabase, user.id);
+    xpSummary = await getAuthenticatedUserXpSummary(supabase);
+    recentXpEvents = await getAuthenticatedUserRecentXpEvents(supabase);
   } catch {
     learningOverview = null;
+    xpSummary = null;
+    recentXpEvents = [];
   }
 
   return (
@@ -63,6 +70,29 @@ export default async function ProfilePage() {
           </p>
         )}
       </section>
+      {xpSummary && (
+        <section className="profile-section profile-xp-section" aria-labelledby="profile-xp-heading">
+          <div className="profile-xp-card">
+            <div className="profile-xp-heading">
+              <div>
+                <p className="eyebrow">XP and level</p>
+                <h2 id="profile-xp-heading">Level {xpSummary.currentLevel}</h2>
+              </div>
+              <strong>{xpSummary.totalXp} XP</strong>
+            </div>
+            <ProgressBar
+              value={xpSummary.xpTowardNextLevel}
+              max={xpSummary.xpNeededForNextLevel}
+              label={`${xpSummary.xpTowardNextLevel} / ${xpSummary.xpNeededForNextLevel} XP toward Level ${xpSummary.currentLevel + 1}`}
+              showValue={false}
+            />
+            <p className="profile-xp-detail">
+              {xpSummary.xpTowardNextLevel} / {xpSummary.xpNeededForNextLevel} XP toward Level {xpSummary.currentLevel + 1}
+              <span>{xpSummary.xpRemainingForNextLevel} XP remaining</span>
+            </p>
+          </div>
+        </section>
+      )}
       <section className="profile-section profile-learning-section">
         <SectionHeader eyebrow="Your learning" title="Learning Progress" />
         {learningOverview ? (
@@ -104,6 +134,24 @@ export default async function ProfilePage() {
           </>
         ) : (
           <p className="auth-message auth-message-error" role="alert">Learning progress could not be loaded right now.</p>
+        )}
+      </section>
+      <section className="profile-section profile-xp-activity">
+        <SectionHeader eyebrow="Recent XP" title="XP Activity" />
+        {recentXpEvents.length > 0 ? (
+          <ol className="xp-activity-list">
+            {recentXpEvents.map((event) => (
+              <li key={`${event.createdAt}-${event.eventType}-${event.xpAmount}`}>
+                <strong>+{event.xpAmount} XP</strong>
+                <span>{event.label}</span>
+                <time dateTime={event.createdAt}>{new Intl.DateTimeFormat("en", { month: "short", day: "numeric", hour: "numeric", minute: "2-digit" }).format(new Date(event.createdAt))}</time>
+              </li>
+            ))}
+          </ol>
+        ) : (
+          <div className="profile-learning-empty">
+            <EmptyState title="No XP activity yet" description="Complete a lesson and your XP activity will appear here." />
+          </div>
         )}
       </section>
     </div>

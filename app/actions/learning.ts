@@ -9,11 +9,24 @@ type ProgressActionState = {
   message: string;
   continueHref?: string;
   pathComplete?: boolean;
+  xpMessages?: string[];
 } | null;
 
 function getSlug(formData: FormData, field: string) {
   const value = formData.get(field);
   return typeof value === "string" ? value.trim() : "";
+}
+
+function getXpMessage(eventType: "lesson_completed" | "final_mission_completed" | "path_completed", xpAmount: number) {
+  switch (eventType) {
+    case "final_mission_completed":
+      return `Final mission completed · +${xpAmount} XP`;
+    case "path_completed":
+      return `Path completed · +${xpAmount} bonus XP`;
+    case "lesson_completed":
+    default:
+      return `Lesson completed · +${xpAmount} XP`;
+  }
 }
 
 async function saveLessonProgress(formData: FormData, status: ProgressStatus): Promise<ProgressActionState> {
@@ -44,7 +57,7 @@ async function saveLessonProgress(formData: FormData, status: ProgressStatus): P
 
     const { data: lesson, error: lessonError } = await supabase
       .from("lessons")
-      .select("id, sort_order")
+      .select("id, slug, sort_order")
       .eq("path_id", path.id)
       .eq("slug", lessonSlug)
       .eq("is_published", true)
@@ -96,12 +109,33 @@ async function saveLessonProgress(formData: FormData, status: ProgressStatus): P
         .order("sort_order", { ascending: true })
         .limit(1)
         .maybeSingle();
+      const xpMessages: string[] = [];
+
+      if (existing?.status !== "completed") {
+        const lessonEventKey = lesson.slug.startsWith("final-mission-")
+          ? `final-mission:${lesson.id}`
+          : `lesson:${lesson.id}`;
+        const eventKeys = nextLessonError || nextLesson
+          ? [lessonEventKey]
+          : [lessonEventKey, `path:${path.id}`];
+        const { data: xpEvents } = await supabase
+          .from("xp_events")
+          .select("event_type, xp_amount")
+          .eq("user_id", user.id)
+          .in("event_key", eventKeys)
+          .order("created_at", { ascending: true });
+
+        xpEvents?.forEach((event) => {
+          xpMessages.push(getXpMessage(event.event_type, event.xp_amount));
+        });
+      }
 
       return {
         status: "success",
         message: "Lesson marked complete.",
         continueHref: nextLessonError || !nextLesson ? undefined : `/learn/${pathSlug}/${nextLesson.slug}`,
         pathComplete: !nextLessonError && !nextLesson,
+        xpMessages,
       };
     }
 

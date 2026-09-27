@@ -3,6 +3,7 @@ import { Search, UserRound } from "lucide-react";
 import { IconButton } from "@/components/site-ui";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { ThemeToggle } from "@/components/theme-toggle";
+import { getAuthenticatedUserXpSummary } from "@/lib/xp";
 
 const links = [
   ["Learn", "/learn"],
@@ -14,6 +15,7 @@ const links = [
 
 export async function Navbar() {
   let accountLabel: string | null = null;
+  let accountLevel: number | null = null;
 
   try {
     const supabase = await createSupabaseServerClient();
@@ -29,13 +31,18 @@ export async function Navbar() {
       accountLabel = profile?.display_name?.trim()
         || (typeof metadataName === "string" ? metadataName.trim() : "")
         || "Profile";
+      const xpSummary = await getAuthenticatedUserXpSummary(supabase);
+      accountLevel = xpSummary.currentLevel;
     }
   } catch {
     accountLabel = null;
+    accountLevel = null;
   }
 
   const accountHref = accountLabel ? "/profile" : "/login";
-  const accountText = accountLabel ?? "Sign in";
+  const accountText = accountLabel && accountLevel
+    ? `${accountLabel} · Lv. ${accountLevel}`
+    : accountLabel ?? "Sign in";
 
   return (
     <header className="site-header">

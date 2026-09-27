@@ -34,6 +34,33 @@ export type Database = {
         };
         Relationships: [];
       };
+      xp_events: {
+        Row: {
+          id: string;
+          user_id: string;
+          event_type: "lesson_completed" | "final_mission_completed" | "path_completed";
+          source_id: string | null;
+          xp_amount: number;
+          event_key: string;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          user_id: string;
+          event_type: "lesson_completed" | "final_mission_completed" | "path_completed";
+          source_id?: string | null;
+          xp_amount: number;
+          event_key: string;
+          created_at?: string;
+        };
+        Update: {
+          event_type?: "lesson_completed" | "final_mission_completed" | "path_completed";
+          source_id?: string | null;
+          xp_amount?: number;
+          event_key?: string;
+        };
+        Relationships: [];
+      };
       lessons: {
         Row: {
           id: string;
